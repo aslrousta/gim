@@ -81,16 +81,19 @@ func CORS(opt *CORSOptions) gin.HandlerFunc {
 
 		if !opt.allowsOrigin(origin) {
 			c.String(http.StatusForbidden, "Invalid Origin")
+			c.Abort()
 			return
 		}
 
 		if c.Request.Method == http.MethodOptions {
-			doCORSOptions(c, origin, opt)
+			writeCORSHeaders(c, origin, opt)
+			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
 
 		if !opt.allowsMethod(c.Request.Method) {
 			c.String(http.StatusForbidden, "Invalid HTTP Method")
+			c.Abort()
 			return
 		}
 
@@ -101,7 +104,7 @@ func CORS(opt *CORSOptions) gin.HandlerFunc {
 	}
 }
 
-func doCORSOptions(c *gin.Context, origin string, opt *CORSOptions) {
+func writeCORSHeaders(c *gin.Context, origin string, opt *CORSOptions) {
 	var allowsCredentials string
 	if opt.AllowCredentials {
 		allowsCredentials = "true"
@@ -114,6 +117,4 @@ func doCORSOptions(c *gin.Context, origin string, opt *CORSOptions) {
 	c.Header("Access-Control-Allow-Headers", strings.Join(opt.Headers, ", "))
 	c.Header("Access-Control-Allow-Credentials", allowsCredentials)
 	c.Header("Access-Control-Max-Age", strconv.Itoa(opt.MaxAge))
-
-	c.Status(http.StatusNoContent)
 }
